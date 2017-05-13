@@ -10,7 +10,7 @@ class Mark(models.Model):
 
 class Model(models.Model):
     value_id = models.CharField(max_length=200)
-    mark = models.ForeignKey(Mark)
+    mark_id = models.CharField(max_length=200)
     name = models.CharField(max_length=200)
 
 
