@@ -4,5 +4,6 @@ from AutoApp import views
 
 urlpatterns = [
     url(r'load$', views.load),
-    url(r'parse$', views.parse_test)
+    url(r'parse$', views.parse_test),
+    url(r'bot$', views.start_bot)
 ]

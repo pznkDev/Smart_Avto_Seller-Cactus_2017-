@@ -4,9 +4,9 @@ from selenium.webdriver.common.keys import Keys
 from bs4 import BeautifulSoup
 
 # PATH OF PHANTOMJS
-driver = webdriver.PhantomJS(executable_path=r"D:\Web\ria\phantomjs-2.1.1-windows\bin\phantomjs.exe")
-# browser = webdriver.Firefox(executable_path=r"C:\Users\ConcatN\anaconda3\selenium\geckodriver.exe")
-driver.set_window_size(1400, 1000)
+#driver = webdriver.PhantomJS(executable_path=r"D:\Web\ria\phantomjs-2.1.1-windows\bin\phantomjs.exe")
+driver = webdriver.Firefox()
+#driver.set_window_size(1400, 1000)
 
 
 def parse_links(search_req):
@@ -38,33 +38,47 @@ def parse_links(search_req):
 def parse_car_details(car_link):
     # print("Source:", car_link)
     car_details = dict()
-    driver.get(car_link)
-    bs_car = BeautifulSoup(driver.page_source, "lxml")
-    ad_name = bs_car.select("h1.head")[0]["title"]
-    car_details["car_name"], car_details["year"] = ad_name.rsplit(" ", 1)
-    car_details["price"] = bs_car.select("span.price")[0].text
-    car_details["num_photos"] = bs_car.select("div.count-photo")[0].text.split()[2]
-    descr = bs_car.select("#description dd")
-    for tag in descr:
-        tag_str = tag.text.lower().strip()
-        if ":" in tag_str:
-            if "читать еще скрыть" in tag_str:
-                tag_str = tag_str.replace("читать еще скрыть", "")
-            slice_from = tag_str.index(":") + 1
-            if "пробег:" in tag_str:
-                car_details["mileage"] = tag_str[slice_from: tag_str.index("тыс")]
-            elif "город:" in tag_str:
-                car_details["city"] = tag_str[slice_from:]
-            elif "состояние" in tag_str:
-                car_details["condition"] = tag_str[slice_from:]
-        else:
-            try:  # fix it
+    try:
+        car_details["link"] = car_link
+        driver.get(car_link)
+        bs_car = BeautifulSoup(driver.page_source, "lxml")
+        ad_name = bs_car.select("h1.head")[0]["title"]
+        car_details["car_name"], car_details["year"] = ad_name.rsplit(" ", 1)
+        car_details["price"] = bs_car.select("span.price")[0].text
+        car_details["num_photos"] = bs_car.select("div.count-photo")[0].text.split()[2]
+        dates = bs_car.select("div.item.created")
+        for tag in dates:
+            tag_str = tag.text.lower()
+            if "зарегистрирован" in tag_str:
+                car_details["registered"] = tag.text.rsplit(" ", 1)[1]
+
+        descr = bs_car.select("#description dd")
+        for tag in descr:
+            tag_str = tag.text.lower().strip()
+            if ":" in tag_str:
+                if "читать еще скрыть" in tag_str:
+                    tag_str = tag_str.replace("читать еще скрыть", "")
+                slice_from = tag_str.index(":") + 1
+                if "пробег:" in tag_str:
+                    car_details["mileage"] = tag_str[slice_from: tag_str.index("тыс")]
+                elif "город:" in tag_str:
+                    car_details["city"] = tag_str[slice_from:]
+                elif "состояние" in tag_str:
+                    car_details["condition"] = tag_str[slice_from:]
+                elif "безопасность" in tag_str or \
+                        "комфорт" in tag_str or\
+                        "мультимедиа" in tag_str:
+                    if "equip" not in car_details.keys():
+                        car_details["equip"] = tag_str[slice_from:]
+                    else:
+                        car_details["equip"] += " " + tag_str[slice_from:]
+            elif tag.attrs:
                 if "additional-data" in tag["class"]:
-                    car_details["additional"] = tag.text
-            except KeyError:
-                # print(tag.text)
-                pass
-    # print(car_details)
+                        car_details["additional"] = tag.text
+        car_details["views"] = bs_car.select("#advViews")[0].text
+        car_details["created"] = " ".join(bs_car.select(".i-block.date-add")[0]["title"].split()[2:])
+    except Exception:
+        print("Error while parsing:", car_link)
     return car_details
 
 
@@ -91,7 +105,5 @@ if __name__ == '__main__':
           "price_do=&" \
           "currency=1&" \
           "countpage=100"
-    # parse_car_details("https://auto.ria.com/auto_volkswagen_golf-iv_19677527.html")
-    data = parse(req)
-    for jsn in data:
-        print(jsn)
+
+    parse_car_details("https://auto.ria.com/auto_volkswagen_golf-iv_19677527.html")

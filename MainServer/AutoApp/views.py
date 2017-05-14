@@ -2,11 +2,13 @@ from django.http import HttpResponse
 
 from AutoApp.db_filling import fill_database
 from AutoApp.parser import parse
+import telegram_bot_script.telegram_main as telegram
 
 # Create your views here.
 
 
 def load(request):
+    print('start filling database')
     fill_database()
     return HttpResponse("hello, files loading success")
 
@@ -27,3 +29,7 @@ def parse_test(request):
     return HttpResponse(parse(r))
 
 
+def start_bot(request):
+    telegram.start_telegram_bot()
+
+    return None
