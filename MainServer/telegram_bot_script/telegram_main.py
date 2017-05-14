@@ -12,6 +12,11 @@ state_dict = {}
 
 bot = telebot.TeleBot(const.token)
 
+# results = ['https://music.yandex.ua/search?text=%D1%81%D0%BF%D0%BB%D0%B8%D0%BD',
+#            'https://auto.ria.com/legkovie/bmw/123/',
+#            'https://auto.ria.com/legkovie/bugatti/veyron/',
+#            'https://auto.ria.com/legkovie/citroen/c15/']
+
 
 def send_msg_greeting(chat_id):
     markup_start = telebot.types.ReplyKeyboardMarkup(True, True)
@@ -61,6 +66,14 @@ def send_msg_confirm_search(chat_id):
     bot.send_message(chat_id, const.msg_confirm_search
                      % (request['mark'], request['model'], request['region']),
                      parse_mode='Markdown', reply_markup=markup_confirm)
+
+
+def send_msg_results(chat_id, links):
+    msg = '<b>TOP Links:</b> \n\n'
+    for i, link in enumerate(links):
+        msg += '''<i>%d)</i> <a href=link>%s</a> \n\n''' % (i, link)
+
+    bot.send_message(chat_id, msg, parse_mode='HTML')
 
 
 def main():
@@ -115,7 +128,8 @@ def main():
                     if similarity[1] == 100:
                         state_dict[message.chat.id]['model'] = msg_text
                         state_dict[message.chat.id]['model_id'] = \
-                            [model.value_id for model in Model.objects.all() if model.name.strip().lower() == msg_text][0]
+                            [model.value_id for model in Model.objects.all()
+                             if model.name.strip().lower() == msg_text and model.mark_id.strip().lower() == state_dict[message.chat.id]['mark']][0]
                         state_dict[message.chat.id]['cur_state'] = const.state_in_model
                         send_msg_in_region(message.chat.id)
                         print('Cur state ::: ', state_dict[message.chat.id])
@@ -141,17 +155,19 @@ def main():
 
                         req_search = state_dict[message.chat.id]
 
-                        parser.parse("https://auto.ria.com/search/?" +
-                                     "category_id=1&" +
-                                     "marka_id=" + str(req_search['mark_id']) +
-                                     "&model_id=" + str(req_search['model_id']) +
-                                     "&state%5B0%5D=" + str(req_search['region_id']) +
-                                     "&s_yers%5B0%5D=0&" +
-                                     "po_yers%5B0%5D=0&" +
-                                     "price_ot=&" +
-                                     "price_do=&" +
-                                     "currency=1&" +
-                                     "countpage=100")
+                        q = "https://auto.ria.com/search/?" + "category_id=1&" + "marka_id=" + str(req_search['mark_id']) + \
+                                     "&model_id=" + req_search['model_id'] + \
+                                     "&state%5B0%5D=" + str(req_search['region_id']) +\
+                                     "&s_yers%5B0%5D=0&" + \
+                                     "po_yers%5B0%5D=0&" + \
+                                     "price_ot=&" + \
+                                     "price_do=&" + \
+                                     "currency=1&" + \
+                                     "countpage=20"
+                        print(q)
+                        response = parser.parse(q)
+
+                        send_msg_results(message.chat.id, [resp['link'] for resp in response])
                     else:
                         bot.send_message(message.chat.id, const.msg_cancel, parse_mode='Markdown')
                         del state_dict[message.chat.id]
@@ -159,7 +175,7 @@ def main():
                 send_msg_greeting(message.chat.id)
                 state_dict[message.chat.id] = {'cur_state': const.state_init}
 
-    bot.polling(none_stop=True, interval=1)
+    bot.polling(none_stop=True, interval=0.5)
 
 
 def start_telegram_bot():

@@ -32,4 +32,4 @@ def parse_test(request):
 def start_bot(request):
     telegram.start_telegram_bot()
 
-    return None
+    return HttpResponse("hello, files loading success")
