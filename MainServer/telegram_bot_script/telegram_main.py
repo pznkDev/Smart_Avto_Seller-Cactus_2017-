@@ -175,7 +175,7 @@ def main():
                 send_msg_greeting(message.chat.id)
                 state_dict[message.chat.id] = {'cur_state': const.state_init}
 
-    bot.polling(none_stop=True, interval=0.5)
+    bot.polling(none_stop=True, interval=0.3)
 
 
 def start_telegram_bot():

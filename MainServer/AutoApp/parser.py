@@ -98,15 +98,12 @@ def parse_car_details(car_link):
 def parse(search_req):
     links = parse_links(search_req)
     parsed_data = list()
-    print("Parsed details:")
-    f = open("output.txt", "w")
+
     for link in links:
         parsed_car = parse_car_details(link)
         if parsed_data is not None:
             parsed_data.append(parsed_car)
         # time.sleep(2)
-        json.dump(parsed_car, f)
-        f.write("\n")
         print(len(parsed_data))
         print(link)
 
